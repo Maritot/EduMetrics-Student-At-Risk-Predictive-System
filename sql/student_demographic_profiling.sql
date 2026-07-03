@@ -77,3 +77,78 @@ FROM vw_student_demographics
 WHERE gender IS NULL
 OR region IS NULL
 OR highest_education IS NULL;
+
+
+CREATE TABLE studentVle (
+    code_module VARCHAR(10),
+    code_presentation VARCHAR(10),
+    id_student INT,
+    id_site INT,
+    date INT,
+    sum_click INT,
+    
+    PRIMARY KEY (
+        code_module,
+        code_presentation,
+        id_student,
+        id_site,
+        date
+    )
+);
+select * from studentVle;
+
+CREATE TABLE studentAssessment (
+    id_assessment INT,
+    id_student INT,
+    date_submitted INT,
+    is_banked INT,
+    score DECIMAL(5,2),
+
+    PRIMARY KEY (id_assessment, id_student)
+);
+
+select * from studentAssessment;
+
+CREATE TABLE assessments (
+    code_module VARCHAR(10),
+    code_presentation VARCHAR(10),
+    id_assessment INT PRIMARY KEY,
+    assessment_type VARCHAR(20),
+    date INT,
+    weight DECIMAL(5,2)
+);
+
+select * from assessments;
+
+WITH first_exam AS (
+    SELECT
+        sa.id_student,
+        a.code_module,
+        a.code_presentation,
+        MIN(a.date) AS first_exam_date
+    FROM studentAssessment sa
+    JOIN assessments a
+        ON sa.id_assessment = a.id_assessment
+    GROUP BY
+        sa.id_student,
+        a.code_module,
+        a.code_presentation
+)
+
+SELECT
+    sv.id_student,
+    sv.code_module,
+    sv.code_presentation,
+    SUM(sv.sum_click) AS total_clicks_before_first_exam
+FROM studentVle sv
+JOIN first_exam fe
+    ON sv.id_student = fe.id_student
+   AND sv.code_module = fe.code_module
+   AND sv.code_presentation = fe.code_presentation
+WHERE sv.date < fe.first_exam_date
+GROUP BY
+    sv.id_student,
+    sv.code_module,
+    sv.code_presentation
+ORDER BY
+    total_clicks_before_first_exam DESC;
