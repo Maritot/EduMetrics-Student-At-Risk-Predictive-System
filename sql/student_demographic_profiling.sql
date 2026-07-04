@@ -152,3 +152,37 @@ GROUP BY
     sv.code_presentation
 ORDER BY
     total_clicks_before_first_exam DESC;
+    
+    
+    
+
+
+SELECT
+    a.code_module,
+    a.code_presentation,
+    sa.id_student,
+
+    ROUND(SUM(sa.score * a.weight / 100.0),2) AS total_weighted_score,
+
+    RANK() OVER(
+        PARTITION BY
+            a.code_module,
+            a.code_presentation
+        ORDER BY
+            SUM(sa.score * a.weight / 100.0) DESC
+    ) AS student_rank
+
+FROM studentAssessment sa
+
+JOIN assessments a
+ON sa.id_assessment = a.id_assessment
+
+GROUP BY
+    a.code_module,
+    a.code_presentation,
+    sa.id_student
+
+ORDER BY
+    a.code_module,
+    a.code_presentation,
+    student_rank;
